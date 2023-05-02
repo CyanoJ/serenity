@@ -1,5 +1,6 @@
 use serde::de::{Deserialize, Deserializer, Error as DeError};
 use serde::Serialize;
+use serde_with::{serde_as, EnumMap};
 
 #[cfg(feature = "http")]
 use crate::builder::{
@@ -404,9 +405,21 @@ impl<'de> Deserialize<'de> for MessageComponentInteraction {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum SelectMenuResolved {
+    #[serde(rename = "channels")]
+    Channels(crate::model::HashMap<crate::model::prelude::ChannelId, crate::model::prelude::PartialChannel>),
+    #[serde(rename = "roles")]
+    Roles(crate::model::HashMap<crate::model::prelude::RoleId, crate::model::prelude::Role>),
+    #[serde(rename = "users")]
+    Users(crate::model::HashMap<crate::model::prelude::UserId, crate::model::prelude::User>),    
+    #[serde(rename = "members")]
+    Members(crate::model::HashMap<crate::model::prelude::UserId, crate::model::prelude::PartialMember>),
+}
 /// A message component interaction data, provided by [`MessageComponentInteraction::data`]
 ///
 /// [Discord docs](https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-object-interaction-data-structure).
+#[serde_as]
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
 pub struct MessageComponentInteractionData {
@@ -414,9 +427,16 @@ pub struct MessageComponentInteractionData {
     pub custom_id: String,
     /// The type of the component.
     pub component_type: ComponentType,
-    /// The given values of the [`SelectMenu`]s
+    /// The given values of the StringSelectMenu
     ///
     /// [`SelectMenu`]: crate::model::application::component::SelectMenu
     #[serde(default)]
     pub values: Vec<String>,
+    /// The given resolved models of the [`SelectMenu`], if it is not a StringSelectMenu
+    ///
+    /// [`SelectMenu`]: crate::model::application::component::SelectMenu
+    #[serde_as(as = "EnumMap")]
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub resolved: Vec<SelectMenuResolved>,
 }

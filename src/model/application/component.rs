@@ -11,7 +11,11 @@ use crate::model::channel::ReactionType;
 pub enum ComponentType {
     ActionRow = 1,
     Button = 2,
-    SelectMenu = 3,
+    StringSelectMenu = 3,
+    UserSelectMenu = 5,
+    RoleSelectMenu = 6,
+    MentionableSelectMenu = 7,
+    ChannelSelectMenu = 8,
     InputText = 4,
     Unknown = !0,
 }
@@ -19,8 +23,12 @@ pub enum ComponentType {
 enum_number!(ComponentType {
     ActionRow,
     Button,
-    SelectMenu,
-    InputText
+    StringSelectMenu,
+    UserSelectMenu,
+    RoleSelectMenu,
+    MentionableSelectMenu,
+    ChannelSelectMenu,
+    InputText,
 });
 
 /// An action row.
@@ -57,7 +65,7 @@ impl<'de> Deserialize<'de> for ActionRowComponent {
             ComponentType::Button => from_value::<Button>(Value::from(map))
                 .map(ActionRowComponent::Button)
                 .map_err(DeError::custom),
-            ComponentType::SelectMenu => from_value::<SelectMenu>(Value::from(map))
+            ComponentType::StringSelectMenu | ComponentType::UserSelectMenu | ComponentType::RoleSelectMenu | ComponentType::MentionableSelectMenu | ComponentType::ChannelSelectMenu=> from_value::<SelectMenu>(Value::from(map))
                 .map(ActionRowComponent::SelectMenu)
                 .map_err(DeError::custom),
             ComponentType::InputText => from_value::<InputText>(Value::from(map))
@@ -135,6 +143,17 @@ enum_number!(ButtonStyle {
     Link
 });
 
+/// The type of a [`SelectMenu`]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, PartialOrd, Ord, Serialize)]
+#[repr(u8)]
+pub enum SelectMenuType {
+    String = 3,
+    User = 5,
+    Role = 6,
+    Mentionable = 7,
+    Channel = 8,
+}
+
 /// A select menu component.
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SelectMenu {
@@ -149,9 +168,14 @@ pub struct SelectMenu {
     pub min_values: Option<u64>,
     /// The maximum number of selections allowed.
     pub max_values: Option<u64>,
-    /// The options of this select menu.
+    /// The options of this select menu. (StringSelectMenu only)
     #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub options: Vec<SelectMenuOption>,
+    /// The allowed channel types of this select menu. (ChannelSelectMenu only)
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub channel_types: Vec<crate::model::channel::ChannelType>,
     /// The result location for modals
     #[serde(default)]
     pub values: Vec<String>,

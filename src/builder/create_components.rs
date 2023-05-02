@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::internal::prelude::*;
 use crate::json::{self, from_number, Value};
-use crate::model::application::component::{ButtonStyle, InputTextStyle};
+use crate::model::application::component::{ButtonStyle, InputTextStyle, SelectMenuType};
 use crate::model::channel::ReactionType;
 
 /// A builder for creating several [`ActionRow`]s.
@@ -235,6 +235,17 @@ impl CreateSelectMenu {
         self
     }
 
+    /// The type of the select menu.
+    pub fn kind(&mut self, kind: SelectMenuType) -> &mut Self {
+        self.0.insert("type", from_number(kind as u8));
+        self
+    }
+
+    pub fn channel_types(&mut self, types: Vec<crate::model::channel::ChannelType>) -> &mut Self {
+        self.0.insert("channel_types", Value::from(types.into_iter().map(|x| from_number(x as u8)).collect::<Vec<_>>()));
+        self
+    }
+
     /// Sets the custom id of the select menu, a developer-defined identifier.
     pub fn custom_id<D: ToString>(&mut self, id: D) -> &mut Self {
         self.0.insert("custom_id", Value::from(id.to_string()));
@@ -273,7 +284,9 @@ impl CreateSelectMenu {
 
     #[must_use]
     pub fn build(mut self) -> Value {
-        self.0.insert("type", from_number(3_u8));
+        if !self.0.contains_key("type") {
+            self.0.insert("type", from_number(3_u8));
+        }
 
         json::hashmap_to_json_map(self.0.clone()).into()
     }
